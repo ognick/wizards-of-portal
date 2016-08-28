@@ -28,7 +28,8 @@ case class TicTacToe[T](size: Int, matrix: Vector[T])(implicit item: Item[T]) {
           else None
         } else {
           val curr = f(i, j)
-          loop(acc && item.compare(curr, prev), curr, i, j + 1)
+          val res = item.nonEmpty(curr) && item.compare(curr, prev)
+          loop(acc && res, curr, i, j + 1)
         }
       }
       loop(acc = true, f(0, 0), 0, 1)
@@ -41,11 +42,9 @@ case class TicTacToe[T](size: Int, matrix: Vector[T])(implicit item: Item[T]) {
             val leftCurr = apply(i, i)
             val j = size - 1 - i
             val rightCurr = apply(j, i)
-            loop(leftAcc = leftAcc && item.compare(leftCurr, leftPrev),
-                 rightAcc = rightAcc && item.compare(rightCurr, rightPrev),
-                 leftPrev = leftCurr,
-                 rightPrev = rightCurr,
-                 i = i + 1)
+            val leftRes = item.nonEmpty(leftCurr) && item.compare(leftCurr, leftPrev)
+            val rightRes = item.nonEmpty(rightCurr) && item.compare(rightCurr, rightPrev)
+            loop(leftAcc = leftAcc && leftRes, rightAcc = rightAcc && rightRes, leftCurr, rightCurr, i + 1)
           case _ if leftAcc => Some(leftPrev)
           case _ if rightAcc => Some(rightPrev)
           case _ => None
@@ -63,6 +62,10 @@ case class TicTacToe[T](size: Int, matrix: Vector[T])(implicit item: Item[T]) {
       case None if matrix.forall(item.nonEmpty) => Status.Draw
       case _ => Status.NotFinished
     }
+  }
+
+  override def toString = {
+    matrix.sliding(size, size).map(_.mkString(" ")).mkString("\n")
   }
 }
 

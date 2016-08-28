@@ -48,6 +48,16 @@ class TicTacToeSpec extends FlatSpec with Matchers {
     field.status should be (TicTacToe.Status.NotFinished)
   }
 
+  it should "be not finished when empty" in {
+    val field = Field(
+      "___",
+      "___",
+      "___"
+    )
+    field.status should be (TicTacToe.Status.NotFinished)
+  }
+
+
   it should "be draw when contains no line and no empty cells" in {
     val field = Field(
       "oxo",
