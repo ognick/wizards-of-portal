@@ -61,26 +61,54 @@ object WopSolver {
 
   type EvalPoint = (Int, Option[Point])
 
-  def max(best: EvalPoint, up: EvalPoint) = if (best._1 > up._1) best else up
+  def betstPoint(best: EvalPoint, up: EvalPoint) = if (best._1 > up._1) best else up
   def min(best: EvalPoint, up: EvalPoint) = if (best._1 < up._1) best else up
 
-  def playerSolve(player: Player): (EvalPoint, EvalPoint) => EvalPoint = player match {
-    case Player.P1 => max
-    case Player.P2 => min
+  case class AlphaBetaSolver(player: Player, ab: Option[(Int, Int)]) {
+    private def gt(a: Int, b: Int) = a >= b
+    private def lt(a: Int, b: Int) = a <= b
+
+    val (alpha, beta) = ab match {
+      case Some(x) => x
+      case _ =>
+        player match {
+          case Player.P1 => (Int.MaxValue, Int.MinValue)
+          case Player.P2 => (Int.MinValue, Int.MaxValue)
+        }
+    }
+
+    val initValue: Int = player match {
+      case Player.P1 => alpha
+      case Player.P2 => beta
+    }
+
+    val compare: ((Int, Int) => Boolean) = player match {
+      case Player.P1 => gt
+      case Player.P2 => lt
+    }
+
+    def updateAB(score: Int): (Int, Int) = player match {
+      case Player.P1 => (score, beta)
+      case Player.P2 => (alpha, score)
+    }
+
+    def testPruning(score: Int): Boolean = player match {
+      case Player.P1 => gt(score, beta)
+      case Player.P2 => lt(score, alpha)
+    }
   }
 
-  def playerInitialVal(player: Player): Int = player match {
-    case Player.P1 => Int.MinValue
-    case Player.P2 => Int.MaxValue
-  }
-
-  def alphaBeta(state: Either[Foul, WopState], prevPoint: Option[Point], depth: Int): EvalPoint = state match {
+  def alphaBeta(state: Either[Foul, WopState],
+                prevPoint: Option[Point],
+                depth: Int = 0,
+                ab: Option[(Int, Int)] = None): EvalPoint = state match {
     case Right(s: WopState) =>
       lazy val returnResult = (WopSolver.heuristicEvalState(s), prevPoint)
       if (depth >= MAX_DEPTH) returnResult
       else
         s match {
           case is: InProgress =>
+            val alphaBetaSolver = AlphaBetaSolver(is.player, ab)
             @tailrec def processChild(points: List[Point], player: Player, bestEval: EvalPoint): EvalPoint =
               points match {
                 case (point: Point) :: tl =>
@@ -88,16 +116,19 @@ object WopSolver {
                     case None => Some(point)
                     case _ => prevPoint
                   }
-                  val upEval = alphaBeta(is(point), nextPoint, depth + 1)
-                  val solver = playerSolve(player)
-                  processChild(tl, player, solver(bestEval, upEval))
+                  val upEval = alphaBeta(is(point), nextPoint, depth + 1, Some(alphaBetaSolver.updateAB(bestEval._1)))
+                  val upBestEval = if (alphaBetaSolver.compare(bestEval._1, upEval._1)) bestEval else upEval
+                  if (alphaBetaSolver.testPruning(upBestEval._1)) upBestEval
+                  else processChild(tl, player, upBestEval)
                 case _ => bestEval
 
               }
+
+            val initEval = (alphaBetaSolver.initValue, prevPoint)
             is match {
-              case s: Select => processChild(freePoints(s.board), s.player, (playerInitialVal(s.player), prevPoint))
+              case s: Select => processChild(freePoints(s.board), s.player, initEval)
               case s: Turn =>
-                processChild(freePoints(s.board(s.currentSubBoard)), s.player, (playerInitialVal(s.player), prevPoint))
+                processChild(freePoints(s.board(s.currentSubBoard)), s.player, initEval)
             }
           case _ => returnResult
         }

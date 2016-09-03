@@ -8,7 +8,7 @@ class WopSolverSpec extends FlatSpec with Matchers {
 
   it should "be has eval" in {
     val field = Field(
-      "x_x",
+      "xox",
       "_x_",
       "___"
     )
