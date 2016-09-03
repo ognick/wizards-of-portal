@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 
 case class TicTacToe[T](size: Int, matrix: Vector[T])(implicit item: Item[T]) {
 
-  private val boundary = size - 1
+  val boundary = size - 1
 
   def set(point: Point, value: T): TicTacToe[T] = {
     val (x, y) = point

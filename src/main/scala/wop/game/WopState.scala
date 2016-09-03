@@ -54,7 +54,13 @@ object WopState {
     def nonEmpty(v: SubBoard): Boolean = v.status.finished
   }
 
-  case class Turn(player: Player, board: Board, currentSubBoard: Point) extends WopState {
+  sealed trait InProgress extends WopState {
+    def player: Player
+    def board: Board
+    def apply(point: Point): Either[Foul, WopState]
+  }
+
+  case class Turn(player: Player, board: Board, currentSubBoard: Point) extends InProgress {
     def apply(point: Point): Either[Foul, WopState] = {
       val sb = board(currentSubBoard)
       sb(point) match {
@@ -76,7 +82,7 @@ object WopState {
     }
   }
 
-  case class Select(player: Player, board: Board) extends WopState {
+  case class Select(player: Player, board: Board) extends InProgress {
     def apply(point: Point): Either[Foul, WopState] = board(point).status match {
       case Status.NotFinished => Right(Turn(player, board, point))
       case _ => Left(Foul.AlreadyFinished)
@@ -92,7 +98,7 @@ object WopState {
     TicTacToe(Size, subBoard)
   }
 
-  val initial: WopState = {
+  val initial: WopState.InProgress = {
     Select(Player.P1, emptyBoard)
   }
 }
@@ -102,7 +108,12 @@ sealed trait WopState {
     val sizeRange = 0 until WopState.Size
     def linesString(subBoards: Seq[WopState.SubBoard], y: Int): String = {
       val lines = subBoards map { sb =>
-        val xs = for (x <- sizeRange) yield sb(x, y)
+        val xs = for (x <- sizeRange)
+          yield
+            sb.status match {
+              case Status.Finished(p) => p
+              case _ => sb(x, y)
+            }
         xs.mkString(" ")
       }
       lines.mkString(" | ")
