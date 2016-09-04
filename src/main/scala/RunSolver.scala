@@ -9,9 +9,8 @@ object RunSolver extends App {
     println(state)
     state match {
       case s: InProgress if s.player == Player.P2 =>
-        WopSolver.alphaBeta(Right(state), None, 0) match {
-          case (eval, Some(p)) => {
-            println("Solve", eval, p)
+        WopSolver.minMax(state) match {
+          case Some(p) => {
             s(p) match {
               case Right(newState) => loop(newState)
               case x => {
