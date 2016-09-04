@@ -149,6 +149,7 @@ object WopSolver {
 
         case _ => (0, None)
       }
-    loop(Right(state), None, 0, None)._2
+    val (_, point) = loop(Right(state), None, 0, None)
+    point
   }
 }
