@@ -54,6 +54,5 @@ object RunSolver extends App {
     }
   }
   loop(WopState.initial, whoAI)
-//  loop(WopState.initial, Player.P1)
 
 }
