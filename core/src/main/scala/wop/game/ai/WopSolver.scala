@@ -137,7 +137,6 @@ object WopSolver {
                   }
 
                 val initEval = (alphaBeta.initial, currPoint)
-                println(alphaBeta.step, "----Eval", alphaBeta.initial, "depth", depth)
                 is match {
                   case s: Select => processChild(freePoints(s.board), initEval)
                   case s: Turn =>
