@@ -11,6 +11,7 @@ object WopState {
   object Foul {
     case object CellIsNotEmpty extends Foul
     case object AlreadyFinished extends Foul
+    case object NotYourTurn extends Foul
   }
 
   sealed trait Player {
@@ -69,13 +70,13 @@ object WopState {
           val updatedBoard = board.set(currentSubBoard, updatedSb)
           updatedBoard.status match {
             case Status.Draw =>
-              Right(Draw(board))
+              Right(Draw(updatedBoard))
             case Status.NotFinished if updatedBoard(point).status.finished =>
               Right(Select(player.next, updatedBoard))
             case Status.NotFinished =>
               Right(Turn(player.next, updatedBoard, point))
             case Status.Finished(_) =>
-              Right(Win(player, board))
+              Right(Win(player, updatedBoard))
           }
         case _ => Left(Foul.CellIsNotEmpty)
       }
