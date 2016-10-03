@@ -5,14 +5,14 @@ import wop.game.ai.WopSolver
 import scala.annotation.tailrec
 
 object RunSolver extends App {
-  @tailrec def loop(state: WopState): Option[WopState] = {
+  @tailrec def loop(state: WopState, whoAI: Player): Option[WopState] = {
     println(state)
     state match {
-      case s: InProgress if s.player == Player.P2 =>
+      case s: InProgress if s.player == whoAI =>
         WopSolver.minMax(state) match {
           case Some(p) => {
             s(p) match {
-              case Right(newState) => loop(newState)
+              case Right(newState) => loop(newState, whoAI)
               case x => {
                 println("i dont know", x)
                 None
@@ -28,24 +28,31 @@ object RunSolver extends App {
         println("input local x,y")
         val point: Point = (readInt(), readInt())
         prevState(point) match {
-          case Right(newState) => loop(newState)
+          case Right(newState) => loop(newState, whoAI)
           case _ =>
             println("wrong input")
-            loop(prevState)
+            loop(prevState, whoAI)
         }
       case prevState: WopState.Select =>
         println("input global x,y")
         val point: Point = (readInt(), readInt())
         prevState(point) match {
-          case Right(newState) => loop(newState)
+          case Right(newState) => loop(newState, whoAI)
           case _ =>
             println("wrong input")
-            loop(prevState)
+            loop(prevState, whoAI)
         }
       case _ => None
     }
   }
-
-  loop(WopState.initial)
+  @tailrec def whoAI : Player = {
+    println("Which are AI X or O?")
+    readChar() match {
+      case 'X' => Player.P1
+      case 'O' => Player.P2
+      case _ => whoAI
+    }
+  }
+  loop(WopState.initial, whoAI)
 
 }

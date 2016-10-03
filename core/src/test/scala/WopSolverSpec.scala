@@ -15,13 +15,58 @@ class WopSolverSpec extends FlatSpec with Matchers {
       )) should be(4)
   }
 
+  it should "Local field is evaluated eq 1" in {
+    Heuristica.evalBoard(
+      LocalField(
+        "x__",
+        "o__",
+        "___"
+      )) should be(1)
+  }
+
+  it should "Local field is evaluated eq -1" in {
+    Heuristica.evalBoard(
+      LocalField(
+        "o__",
+        "x__",
+        "___"
+      )) should be(-1)
+  }
+
+  it should "Local field is evaluated eq -2" in {
+    Heuristica.evalBoard(
+      LocalField(
+        "x__",
+        "_o_",
+        "___"
+      )) should be(-1)
+  }
+
+  it should "Local field is evaluated eq -4" in {
+    Heuristica.evalBoard(
+      LocalField(
+        "___",
+        "_o_",
+        "___"
+      )) should be(-4)
+  }
+
   it should "Global field is evaluated eq 40" in {
     Heuristica.evalBoard(
       GlobalField(
         "___",
-        "_x_",
+        "_X_",
         "___"
       )) should be(40)
+  }
+
+  it should "Global field is evaluated eq -40" in {
+    Heuristica.evalBoard(
+      GlobalField(
+        "___",
+        "_O_",
+        "___"
+      )) should be(-40)
   }
 
   it should "Local empty should be eq 0" in {
@@ -65,8 +110,8 @@ class WopSolverSpec extends FlatSpec with Matchers {
 
   def GlobalField(xs: String*): TicTacToe[SubBoard] = {
     TicTacToe(size = 3, matrix = xs.mkString.toVector map {
-      case 'x' => XWin
-      case 'o' => OWin
+      case 'X' => XWin
+      case 'O' => OWin
       case _ => Empty
     })
   }

@@ -1,4 +1,5 @@
 package wop.game.ai
+
 import wop.game._
 import wop.game.TicTacToe._
 import wop.game.WopState._
@@ -69,17 +70,20 @@ object WopSolver {
   }
 
   type EvalPoint = (Int, Option[Point])
+
   case class AlphaBeta(player: Player, ab: Option[(Int, Int)]) {
-    private def gt(a: Int, b: Int) = a >= b
-    private def lt(a: Int, b: Int) = a <= b
+    private def gt(a: Int, b: Int, eq: Boolean) = a > b || (eq && a == b)
+
+    private def lt(a: Int, b: Int, eq: Boolean) = a < b || (eq && a == b)
+
+    val step: String = player match {
+      case Player.P1 => "MAX"
+      case Player.P2 => "MIN"
+    }
 
     val (alpha, beta) = ab match {
       case Some(x) => x
-      case _ =>
-        player match {
-          case Player.P1 => (Int.MaxValue, Int.MinValue)
-          case Player.P2 => (Int.MinValue, Int.MaxValue)
-        }
+      case None => (Int.MinValue, Int.MaxValue)
     }
 
     val initial: Int = player match {
@@ -88,11 +92,11 @@ object WopSolver {
     }
 
     def compare(a: EvalPoint, b: EvalPoint): EvalPoint = {
-      val cmp: ((Int, Int) => Boolean) = player match {
+      val cmp: ((Int, Int, Boolean) => Boolean) = player match {
         case Player.P1 => gt
         case Player.P2 => lt
       }
-      if (cmp(a._1, b._1)) a else b
+      if (cmp(a._1, b._1, true)) a else b
     }
 
     def update(score: Int): (Int, Int) = player match {
@@ -101,14 +105,8 @@ object WopSolver {
     }
 
     def testPruning(score: Int): Boolean = player match {
-      case Player.P1 => gt(score, beta)
-      case Player.P2 => lt(score, alpha)
-    }
-
-    def playerFactor(xo: WopState.XO): Int = xo match {
-      case WopState.Player.P1.xo => 1
-      case WopState.Player.P2.xo => -1
-      case WopState.XO.Empty => 0
+      case Player.P1 => gt(score, beta, false) // MAX
+      case Player.P2 => lt(score, alpha, false) // MIN
     }
   }
 
@@ -117,12 +115,13 @@ object WopSolver {
       state match {
         case Right(s: WopState) =>
           lazy val returnResult = (Heuristica.evalState(s), currPoint)
-          if (depth >= MAX_DEPTH) returnResult
+          if (depth >= MAX_DEPTH)
+            returnResult
           else
             s match {
               case is: InProgress =>
                 val alphaBeta = AlphaBeta(is.player, ab)
-                @tailrec def processChild(points: List[Point], player: Player, currEval: EvalPoint): EvalPoint =
+                @tailrec def processChild(points: List[Point], currEval: EvalPoint): EvalPoint =
                   points match {
                     case (point: Point) :: tl =>
                       val nextPoint = currPoint match {
@@ -133,16 +132,15 @@ object WopSolver {
                       val eval = loop(is(point), nextPoint, depth + 1, ab)
                       val bestEval = alphaBeta.compare(currEval, eval)
                       if (alphaBeta.testPruning(bestEval._1)) bestEval
-                      else processChild(tl, player, bestEval)
+                      else processChild(tl, bestEval)
                     case _ => currEval
-
                   }
 
                 val initEval = (alphaBeta.initial, currPoint)
                 is match {
-                  case s: Select => processChild(freePoints(s.board), s.player, initEval)
+                  case s: Select => processChild(freePoints(s.board), initEval)
                   case s: Turn =>
-                    processChild(freePoints(s.board(s.currentSubBoard)), s.player, initEval)
+                    processChild(freePoints(s.board(s.currentSubBoard)), initEval)
                 }
               case _ => returnResult
             }
