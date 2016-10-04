@@ -1,19 +1,22 @@
 package wop.server.actors
 
-import akka.actor.{Actor, ActorRef, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import wop.game.WopState
 
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class GameActor(playerA: ActorRef, playerB: ActorRef, aName: String, bName: String) extends Actor {
+class GameActor(playerA: ActorRef, playerB: ActorRef, aName: String, bName: String)
+  extends Actor with ActorLogging {
 
   var state = WopState.initial
-
+  val vsString = s"$aName vs $bName"
   val playersMap = Map(
     playerA -> WopState.Player.P1,
     playerB -> WopState.Player.P2
   )
+
+  log.info(s"$vsString: started")
 
   context.watch(playerA)
   context.watch(playerB)
@@ -32,6 +35,12 @@ class GameActor(playerA: ActorRef, playerB: ActorRef, aName: String, bName: Stri
             state = newState
             broadcast(newState)
           case Right(newState) =>
+            newState match {
+              case WopState.Win(WopState.Player.P1, _) => log.info(s"$vsString: $aName wins")
+              case WopState.Win(WopState.Player.P2, _) => log.info(s"$vsString: $bName wins")
+              case WopState.Draw(_) => log.info(s"$vsString: draw")
+              case _ =>
+            }
             broadcast(newState)
             broadcast(PlayerActor.GameFinished)
             context.stop(self)
@@ -40,9 +49,11 @@ class GameActor(playerA: ActorRef, playerB: ActorRef, aName: String, bName: Stri
         sender() ! WopState.Foul.NotYourTurn
       }
     case Terminated(`playerA`) =>
+      log.info(s"$vsString: game was aborted cause $aName goes offline")
       playerB ! PlayerActor.GameAborted
       context.stop(self)
     case Terminated(`playerB`) =>
+      log.info(s"$vsString: game was aborted cause $bName goes offline")
       playerA ! PlayerActor.GameAborted
       context.stop(self)
   }

@@ -1,6 +1,6 @@
 package wop.server.actors
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
 
 import scala.concurrent.duration._
 import wop.game.WopState
@@ -11,7 +11,8 @@ import scala.language.postfixOps
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class PlayerActor(matchMaking: ActorRef, callback: PlayerActor.Notification => Unit) extends Actor {
+class PlayerActor(matchMaking: ActorRef, callback: PlayerActor.Notification => Unit)
+  extends Actor with ActorLogging {
 
   import PlayerActor._
   import context.dispatcher
@@ -19,18 +20,19 @@ class PlayerActor(matchMaking: ActorRef, callback: PlayerActor.Notification => U
   val receive: Receive = {
     // Commands from UI
     case Command.SetName(name) =>
+      log.info(s"$name was enter the server")
       context.become(hasNameReceive(name))
   }
 
   def hasNameReceive(name: String): Receive = {
     // Command from another actors
+    case NotifyDisconnect => log.info(s"$name was disconnected")
     case init: EnterGame =>
       callback(Notification.GameStated(init.state, init.yourRole, name, init.enemyName))
       context.become(inGameReceive(name, init), discardOld = false)
     // Commands from UI
     case Command.PlayWithBot => matchMaking ! MatchMakingActor.WantToPlayWithBot(self, name)
     case Command.StartMatchMaking =>
-      println(s"in $name -> Command.StartMatchMaking")
       matchMaking.ask(MatchMakingActor.WantToPlay(self, name))(5 seconds) foreach {
         case MatchMakingActor.WantToPlayResponse(online) =>
           callback(Notification.MatchMakingStarted(name, online))
@@ -45,7 +47,6 @@ class PlayerActor(matchMaking: ActorRef, callback: PlayerActor.Notification => U
     case foul: WopState.Foul =>
       callback(Notification.Error(foul.toString))
     case GameFinished =>
-      println("Game finished for " + name)
       context.unbecome()
     case GameAborted =>
       callback(Notification.GameAborted)
@@ -91,6 +92,8 @@ object PlayerActor {
   case object GameAborted
 
   case object GameFinished
+
+  case object NotifyDisconnect
 
   def props(matchMakingRef: ActorRef)(callback: PlayerActor.Notification => Unit) =
     Props(classOf[PlayerActor], matchMakingRef, callback)
