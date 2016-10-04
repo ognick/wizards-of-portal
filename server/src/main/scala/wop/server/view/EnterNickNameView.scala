@@ -11,9 +11,9 @@ class EnterNickNameView(controller: EnterNickNameController) extends Shtml {
   val render: Korolev.Render[UserState] = {
     case UserState.EnterNickName(loading) =>
       'body(
-        'div(
+        'form(controller.formSubmit(()),
           'input(controller.inputId, 'type /= "text"),
-          'button(controller.buttonClick(()), "Enter game")
+          'button("Enter game")
         )
       )
   }

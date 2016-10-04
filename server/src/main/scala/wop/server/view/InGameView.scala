@@ -22,6 +22,8 @@ class InGameView(controller: InGameController) extends Shtml {
 
   object boardStyle extends BoardStyle {
     val tableStyle = style(
+      "user-select" -> "none",
+      "cursor" -> "pointer",
       "border" -> "2px solid",
       "border-collapse" -> "collapse"
     )

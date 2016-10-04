@@ -21,7 +21,7 @@ lazy val server = project
     name := "Wizards of Portal",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-actor" % "2.4.9",
-      "com.github.fomkin" %% "korolev-server" % "0.0.4-PRE",
+      "com.github.fomkin" %% "korolev-server" % "0.0.5-PRE",
       "ch.qos.logback" % "logback-classic" % "1.1.7"
     )
   )
