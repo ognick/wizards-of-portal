@@ -6,9 +6,10 @@ import wop.game.WopState._
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
+import scala.math._
 
 object WopSolver {
-  val MAX_DEPTH = 5
+  val MAX_DEPTH = 6
 
   object Heuristica {
     implicit def evalFactor(xo: WopState.XO): Int = xo match {
@@ -71,47 +72,35 @@ object WopSolver {
 
   type EvalPoint = (Int, Option[Point])
 
-  case class AlphaBeta(player: Player, ab: Option[(Int, Int)]) {
-    private def gt(a: Int, b: Int, eq: Boolean) = a > b || (eq && a == b)
-
-    private def lt(a: Int, b: Int, eq: Boolean) = a < b || (eq && a == b)
-
-    val step: String = player match {
-      case Player.P1 => "MAX"
-      case Player.P2 => "MIN"
+  case object AlphaBeta {
+    type AB = (Int, Int)
+    val initAB: AB = (Int.MinValue, Int.MaxValue)
+    val testPruning: (AB) => Boolean = {
+      case (a, b) => b <= a
     }
 
-    val (alpha, beta) = ab match {
-      case Some(x) => x
-      case None => (Int.MinValue, Int.MaxValue)
+    val initlEval: (Player) => Int = {
+      case Player.P1 => Int.MinValue
+      case Player.P2 => Int.MaxValue
     }
 
-    val initial: Int = player match {
-      case Player.P1 => alpha
-      case Player.P2 => beta
+    def compare(player: Player, curEval: EvalPoint, bestEval: EvalPoint) = player match {
+      case Player.P1 => if (bestEval._1 < curEval._1) curEval else bestEval
+      case Player.P2 => if (curEval._1 < bestEval._1) curEval else bestEval
     }
 
-    def compare(a: EvalPoint, b: EvalPoint): EvalPoint = {
-      val cmp: ((Int, Int, Boolean) => Boolean) = player match {
-        case Player.P1 => gt
-        case Player.P2 => lt
+    def update(player: Player, ab: AB, evalPoint: EvalPoint): AB = {
+      val (eval: Int, _) = evalPoint
+      val (a: Int, b: Int) = ab
+      player match {
+        case Player.P1 => (max(a, eval), b)
+        case Player.P2 => (a, min(b, eval))
       }
-      if (cmp(a._1, b._1, true)) a else b
-    }
-
-    def update(score: Int): (Int, Int) = player match {
-      case Player.P1 => (score, beta)
-      case Player.P2 => (alpha, score)
-    }
-
-    def testPruning(score: Int): Boolean = player match {
-      case Player.P1 => gt(score, beta, false) // MAX
-      case Player.P2 => lt(score, alpha, false) // MIN
     }
   }
 
   def minMax(state: WopState): Option[Point] = {
-    def loop(state: Either[Foul, WopState], currPoint: Option[Point], depth: Int, ab: Option[(Int, Int)]): EvalPoint =
+    def loop(state: Either[Foul, WopState], currPoint: Option[Point], depth: Int, ab: AlphaBeta.AB): EvalPoint =
       state match {
         case Right(s: WopState) =>
           lazy val returnResult = (Heuristica.evalState(s), currPoint)
@@ -120,34 +109,33 @@ object WopSolver {
           else
             s match {
               case is: InProgress =>
-                val alphaBeta = AlphaBeta(is.player, ab)
-                @tailrec def processChild(points: List[Point], currEval: EvalPoint): EvalPoint =
+                @tailrec def processChild(points: List[Point], currEval: EvalPoint, ab: AlphaBeta.AB): EvalPoint =
                   points match {
                     case (point: Point) :: tl =>
                       val nextPoint = currPoint match {
                         case None => Some(point)
                         case _ => currPoint
                       }
-                      val ab = Some(alphaBeta.update(currEval._1))
                       val eval = loop(is(point), nextPoint, depth + 1, ab)
-                      val bestEval = alphaBeta.compare(currEval, eval)
-                      if (alphaBeta.testPruning(bestEval._1)) bestEval
-                      else processChild(tl, bestEval)
+                      val bestEval = AlphaBeta.compare(is.player, eval, currEval)
+                      val abUp = AlphaBeta.update(is.player, ab, bestEval)
+                      if (AlphaBeta.testPruning(ab)) bestEval
+                      else processChild(tl, bestEval, abUp)
                     case _ => currEval
                   }
 
-                val initEval = (alphaBeta.initial, currPoint)
+                val initEvalPoint: EvalPoint = (AlphaBeta.initlEval(is.player), currPoint)
                 is match {
-                  case s: Select => processChild(freePoints(s.board), initEval)
+                  case s: Select => processChild(freePoints(s.board), initEvalPoint, ab)
                   case s: Turn =>
-                    processChild(freePoints(s.board(s.currentSubBoard)), initEval)
+                    processChild(freePoints(s.board(s.currentSubBoard)), initEvalPoint, ab)
                 }
               case _ => returnResult
             }
 
         case _ => (0, None)
       }
-    val (_, point) = loop(Right(state), None, 0, None)
+    val (_, point) = loop(Right(state), None, 0, AlphaBeta.initAB)
     point
   }
 }
