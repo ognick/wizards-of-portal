@@ -1,5 +1,10 @@
 # Wizards of Portal
 
+[ ![Build Status] [travis-image] ] [travis]
+
+[travis-image]: https://travis-ci.org/ognick/wizards-of-portal.svg?branch=master
+[travis]: https://travis-ci.org/ognick/wizards-of-portal
+
 This is like tic-tac-toe, but with deep strategy and tactics.
 
 ## How to run
