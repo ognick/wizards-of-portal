@@ -71,6 +71,19 @@ object WopServer extends App with Shtml {
       'style (
         """
 
+        * {
+            /* Disable selection/Copy of UIWebView */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+
+        input,textarea {
+            /* Exception for input areas */
+            -webkit-touch-callout: default !important;
+            -webkit-user-select: text !important;
+        }
+
         html, body {
           font-family: 'Open Sans', sans-serif;
           height: 100%;

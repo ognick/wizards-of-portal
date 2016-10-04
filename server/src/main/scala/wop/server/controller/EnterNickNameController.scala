@@ -14,10 +14,10 @@ import scala.language.postfixOps
   */
 class EnterNickNameController(access: KorolevAccess[UserState], playerActor: ActorRef) {
 
-  val inputId = access.id(())
+  val inputId = access.id()
 
-  val buttonClick: EventFactory[Unit] = access.event("click") { _ =>
-    inputId[String]('value) foreach { value =>
+  val formSubmit: EventFactory[Unit] = access.event("submit") { _ =>
+    inputId.get[String]('value) foreach { value =>
       playerActor ! PlayerActor.Command.SetName(value)
       playerActor ! PlayerActor.Command.StartMatchMaking
     }

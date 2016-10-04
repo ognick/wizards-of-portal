@@ -12,7 +12,7 @@ import wop.server.actors.PlayerActor
   */
 class InGameController(access: KorolevAccess[UserState], playerActor: ActorRef) {
 
-  val fieldClick: EventFactory[Point] = access.event("click") { point =>
+  val fieldClick: EventFactory[Point] = access.event("mouseup") { point =>
     playerActor ! point
     noTransition
   }
