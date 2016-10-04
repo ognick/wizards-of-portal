@@ -1,6 +1,6 @@
 package wop.server.actors
 
-import akka.actor.{Actor, ActorRef, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
@@ -9,7 +9,7 @@ import scala.util.Random
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class MatchMakingActor extends Actor {
+class MatchMakingActor extends Actor with ActorLogging {
 
   import MatchMakingActor._
 
@@ -17,7 +17,7 @@ class MatchMakingActor extends Actor {
   type Competitors = (ActorRef, ActorRef)
   type Game = ActorRef
 
-  var online = mutable.HashSet.empty[ActorRef]
+  val online = mutable.HashSet.empty[ActorRef]
   var waitingList = List.empty[Player]
   val gamesMap = TrieMap.empty[Game, Competitors]
 
@@ -31,6 +31,7 @@ class MatchMakingActor extends Actor {
       println(waitingList)
       matchMake()
     case WantToPlayWithBot(player, name) =>
+      log.info(s"$name want play with bot")
       // Remove player from waiting list
       removeFromWaitingList(player)
       val botName = "bot_" + Random.alphanumeric.take(5).mkString

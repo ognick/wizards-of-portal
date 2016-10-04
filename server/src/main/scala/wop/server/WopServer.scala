@@ -50,7 +50,7 @@ object WopServer extends App with Shtml {
       }
 
       access.dux onDestroy { () =>
-        println("On destroy")
+        actor ! PlayerActor.NotifyDisconnect
         actor ! PoisonPill
       }
 
