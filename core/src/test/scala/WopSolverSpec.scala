@@ -60,6 +60,15 @@ class WopSolverSpec extends FlatSpec with Matchers {
       )) should be(40)
   }
 
+  it should "Global field is evaluated eq 30" in {
+    Heuristica.evalBoard(
+      GlobalField(
+        "__X",
+        "__O",
+        "__X"
+      )) should be(30)
+  }
+
   it should "Global field is evaluated eq -40" in {
     Heuristica.evalBoard(
       GlobalField(
