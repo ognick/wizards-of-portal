@@ -17,8 +17,7 @@ object UserState {
   case class InGame(yourRole: WopState.Player,
                     yourName: String,
                     enemyName: String,
-                    wopState: WopState,
-                    timeRemaining: Duration)
+                    wopState: WopState)
       extends UserState
 
   case class GameAborted(reason: String) extends UserState

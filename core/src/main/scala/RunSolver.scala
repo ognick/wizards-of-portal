@@ -5,6 +5,10 @@ import wop.game.ai.WopSolver
 import scala.annotation.tailrec
 
 object RunSolver extends App {
+  implicit case object Time extends WopState.TimeProvider {
+    def currentTime: Long = 0
+  }
+
   @tailrec def loop(state: WopState, whoAI: Player): Option[WopState] = {
     println(state)
     state match {

@@ -1,6 +1,7 @@
 package wop.server.actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import scala.concurrent.duration._
 import wop.game.WopState
 
 /**
@@ -8,6 +9,12 @@ import wop.game.WopState
   */
 class GameActor(playerA: ActorRef, playerB: ActorRef, aName: String, bName: String)
   extends Actor with ActorLogging {
+
+  import context.dispatcher
+
+  implicit case object Time extends WopState.TimeProvider {
+    def currentTime: Long = System.currentTimeMillis()
+  }
 
   var state = WopState.initial
   val vsString = s"$aName vs $bName"
@@ -24,7 +31,22 @@ class GameActor(playerA: ActorRef, playerB: ActorRef, aName: String, bName: Stri
   playerA ! PlayerActor.EnterGame(self, state, playersMap(playerA), bName)
   playerB ! PlayerActor.EnterGame(self, state, playersMap(playerB), aName)
 
+  case object Tick
+
+  context.system.scheduler.schedule(500 milliseconds, 500 milliseconds) {
+    self ! Tick
+  }
+
   def receive: Receive = {
+    case Tick => state.nextTimeState() match {
+        case Left(foul: WopState.Foul.Timeout) =>
+          broadcast(foul)
+          broadcast(PlayerActor.GameFinished)
+          context.stop(self)
+        case Right(s: WopState.InProgress) =>
+          state = s
+          broadcast(PlayerActor.TickGame(s))
+      }
     case (x: Int, y: Int) =>
       if (state.player == playersMap(sender())) {
         state((x, y)) match {

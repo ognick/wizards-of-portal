@@ -5,7 +5,7 @@ import wop.game._
 import wop.server.UserState
 import wop.server.controller.InGameController
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
@@ -97,8 +97,9 @@ class InGameView(controller: InGameController) extends Shtml {
     'table('style /= style.tableStyle, rows.toSeq)
   }
 
-  def renderTimer(you: WopState.Player, current: WopState.Player, t: Duration) = {
-    if (current == you) 'span(s", Time remaining: $t")
+  def renderTimer(you: WopState.Player, current: WopState.Player, time: Long) : VDom = {
+    val t: Long = math.max(0, time) / 1000
+    if (current == you) 'span(s", Time remaining: $t sec.")
     else VDom.Empty
   }
 
@@ -129,7 +130,7 @@ class InGameView(controller: InGameController) extends Shtml {
         'p(reason),
         findOpponentButton
       )
-    case UserState.InGame(yourRole, yourName, enemyName, wopState, timeRemaining) =>
+    case UserState.InGame(yourRole, yourName, enemyName, wopState) =>
       val enemyRole = yourRole.next
 
       def renderInProgress(inProgress: WopState.InProgress, boardEl: VDom) = {
@@ -144,20 +145,21 @@ class InGameView(controller: InGameController) extends Shtml {
           'h1(title),
           'div(
             'span('span(s"You: $yourName, Your figure: "),
-              renderXO(yourRole.xo))
-            //renderTimer(yourRole, inProgress.player, t)
+              renderXO(yourRole.xo),
+              renderTimer(yourRole, inProgress.player, inProgress.finishTime - inProgress.currentTime)
+            )
           ),
           boardEl,
           'div(
             'span(s"Enemy: $enemyName, His figure: "),
-            renderXO(enemyRole.xo)
-            //renderTimer(enemyRole, inProgress.player, t)
+            renderXO(enemyRole.xo),
+            renderTimer(enemyRole, inProgress.player, inProgress.finishTime - inProgress.currentTime)
           )
         )
       }
 
       wopState match {
-        case inProgress @ WopState.Turn(_, board, currentSubBoard) =>
+        case inProgress @ WopState.Turn(_, board, currentSubBoard, _, _) =>
           renderInProgress(inProgress,
             renderTicTacToe[WopState.SubBoard](
               ttt = board,
@@ -169,7 +171,7 @@ class InGameView(controller: InGameController) extends Shtml {
               }
             )
           )
-        case inProgress @ WopState.Select(_, board) =>
+        case inProgress @ WopState.Select(_, board, _, _) =>
           renderInProgress(inProgress,
             renderTicTacToe[WopState.SubBoard](
               ttt = board,

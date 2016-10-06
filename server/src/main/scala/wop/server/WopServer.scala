@@ -9,6 +9,7 @@ import wop.server.actors.PlayerActor.Notification._
 import wop.server.actors.{MatchMakingActor, PlayerActor}
 import wop.server.controller.{EnterNickNameController, InGameController, MatchMakingController}
 import wop.server.view.{EnterNickNameView, InGameView, MatchMakingView}
+import wop.game.WopState
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -33,8 +34,13 @@ object WopServer extends App with Shtml {
             println("Callback matchmaking stated")
             access.dux { case _ => UserState.Matchmaking(name, online) }
           case GameStated(state, role, name, enemyName) =>
-            access.dux { case _ => UserState.InGame(role, name, enemyName, state, 30 seconds) }
+            access.dux { case _ => UserState.InGame(role, name, enemyName, state) }
           case Error(message) =>
+          case Timeout(player) => access.dux {
+            case userState: UserState.InGame =>
+              val message = if (userState.yourRole == player) "You didn't do turn" else "Enemy has left the game"
+              UserState.GameAborted(message)
+          }
           case GameAborted =>
             access.dux {
               case _ =>

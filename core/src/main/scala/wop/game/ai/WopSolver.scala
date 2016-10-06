@@ -9,7 +9,11 @@ import scala.language.implicitConversions
 import scala.math._
 
 object WopSolver {
-  val MAX_DEPTH = 6
+  val MAX_DEPTH = 8
+
+  implicit case object Time extends TimeProvider {
+    def currentTime: Long = 0
+  }
 
   object Heuristica {
     implicit def evalFactor(xo: WopState.XO): Int = xo match {
@@ -45,15 +49,15 @@ object WopSolver {
       vertical + diagonal + horizontal
     }
 
-    def evalBoard[T](board: TicTacToe[T])(implicit item: Item[T], factor: (T => Int)): Int =
+    def evalBoard[T](board: TicTacToe[T])(implicit item: Item[T], evalFactor: (T => Int)): Int =
       board.status match {
         case Status.Draw => 0
-        case Status.Finished(x) => 20 * factor(x)
+        case Status.Finished(x) => 20 * evalFactor(x)
         case Status.NotFinished => scan(board)
       }
 
     def evalState(state: WopState): Int = state match {
-      case s: Win => 500 * evalFactor(s.player.xo)
+      case s: Win => 10000 * evalFactor(s.player.xo)
       case s: Draw => 0
       case s: InProgress =>
         val sizeRange = (0 until WopState.Size).toList
@@ -119,8 +123,10 @@ object WopSolver {
                       val eval = loop(is(point), nextPoint, depth + 1, ab)
                       val bestEval = AlphaBeta.compare(is.player, eval, currEval)
                       val abUp = AlphaBeta.update(is.player, ab, bestEval)
-                      if (AlphaBeta.testPruning(ab)) bestEval
-                      else processChild(tl, bestEval, abUp)
+                      if (AlphaBeta.testPruning(ab))
+                        bestEval
+                      else
+                        processChild(tl, bestEval, abUp)
                     case _ => currEval
                   }
 

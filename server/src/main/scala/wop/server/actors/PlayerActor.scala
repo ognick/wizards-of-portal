@@ -42,8 +42,13 @@ class PlayerActor(matchMaking: ActorRef, callback: PlayerActor.Notification => U
   def inGameReceive(name: String, init: EnterGame): Receive = {
     case point@(_: Int, _: Int) =>
       init.game ! point
+    case TickGame(updatedState) =>
+      callback(Notification.StateUpdated(updatedState))
     case updatedState: WopState =>
       callback(Notification.StateUpdated(updatedState))
+    case timeout: WopState.Foul.Timeout =>
+      log.info(s"$name was disconnected by timeout")
+      callback(Notification.Timeout(timeout.player))
     case foul: WopState.Foul =>
       callback(Notification.Error(foul.toString))
     case GameFinished =>
@@ -85,9 +90,12 @@ object PlayerActor {
 
     case class Error(message: String) extends Notification
 
+    case class Timeout(player: WopState.Player) extends Notification
   }
 
   case class EnterGame(game: ActorRef, state: WopState.InProgress, yourRole: WopState.Player, enemyName: String)
+
+  case class TickGame(state: WopState.InProgress)
 
   case object GameAborted
 
