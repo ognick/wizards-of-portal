@@ -1,6 +1,6 @@
 package wop.server.actors
 
-import akka.actor.{Actor, ActorRef, PoisonPill, Props}
+import akka.actor.{Actor, ActorRef, PoisonPill, Props, ActorLogging}
 import wop.game.WopState
 import wop.game.ai.WopSolver
 
@@ -10,7 +10,7 @@ import scala.language.postfixOps
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class BotPlayerActor(matchMaking: ActorRef) extends Actor {
+class BotPlayerActor(matchMaking: ActorRef) extends Actor with ActorLogging {
 
   import PlayerActor._
   import context.dispatcher
@@ -23,7 +23,11 @@ class BotPlayerActor(matchMaking: ActorRef) extends Actor {
 
   def inGameReceive(game: ActorRef, yourRole: WopState.Player): Receive = {
     case updatedState: WopState.InProgress => tryMakeTurn(game, updatedState, yourRole)
-    case _ => self ! PoisonPill
+    case _: WopState.Foul.Timeout =>
+    case _: TickGame =>
+    case reason =>
+      log.info(s"was killed because: $reason")
+      self ! PoisonPill
   }
 
   def tryMakeTurn(game: ActorRef, state: WopState.InProgress, yourRole: WopState.Player) = {
