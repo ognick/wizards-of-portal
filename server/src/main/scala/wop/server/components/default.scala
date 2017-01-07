@@ -1,11 +1,11 @@
 package wop.server.components
 
-import korolev.{Shtml, VDom}
+import korolev._
 
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-object default extends Shtml {
+object default {
 
   def style(xs: (String, String)*): String = {
     xs map { case (k, v) => s"$k: $v" } mkString "; "

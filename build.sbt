@@ -22,7 +22,7 @@ lazy val server = project
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-actor" % "2.4.9",
       "com.typesafe.akka" %% "akka-slf4j" % "2.4.9",
-      "com.github.fomkin" %% "korolev-server" % "0.0.5-PRE",
+      "com.github.fomkin" %% "korolev-server-blaze" % "0.1.0",
       "ch.qos.logback" % "logback-classic" % "1.1.7"
     )
   )

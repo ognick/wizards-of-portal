@@ -1,6 +1,6 @@
 package wop.server.view
 
-import korolev.{Korolev, Shtml, VDom}
+import korolev._
 import wop.game._
 import wop.server.UserState
 import wop.server.controller.InGameController
@@ -10,9 +10,10 @@ import scala.concurrent.duration._
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class InGameView(controller: InGameController) extends Shtml {
+class InGameView(controller: InGameController) {
 
   import wop.server.components.default._
+  import UserState.effects._
 
   trait BoardStyle {
     def tableStyle: String
@@ -76,7 +77,7 @@ class InGameView(controller: InGameController) extends Shtml {
 
   def renderTicTacToe[T](ttt: TicTacToe[T],
                          style: BoardStyle,
-                         eventFactory: Option[Point => korolev.Event],
+                         eventFactory: Option[Point => Event],
                          cellRenderer: (Point, T) => VDom) = {
     val `2d` = ttt.matrix.sliding(WopState.Size, WopState.Size)
     val rows = `2d`.zipWithIndex map { case (cells, y) =>
@@ -104,7 +105,7 @@ class InGameView(controller: InGameController) extends Shtml {
   }
 
 
-  def renderSubBoard(ttt: TicTacToe[WopState.XO], eventFactory: Option[Point => korolev.Event]) = {
+  def renderSubBoard(ttt: TicTacToe[WopState.XO], eventFactory: Option[Point => Event]) = {
     val boardStyle =
       if (eventFactory.isEmpty) defaultSubBoardStyle
       else selectedSubBoardStyle
@@ -123,7 +124,7 @@ class InGameView(controller: InGameController) extends Shtml {
     "Find new opponent"
   )
 
-  val render: Korolev.Render[UserState] = {
+  val render: Render[UserState] = {
     case UserState.GameAborted(reason) =>
       'body(
         'h1("Game was aborted"),

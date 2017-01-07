@@ -10,15 +10,17 @@ import wop.server.actors.PlayerActor
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class InGameController(access: KorolevAccess[UserState], playerActor: ActorRef) {
+class InGameController() {
 
-  val fieldClick: EventFactory[Point] = access.event("mouseup") { point =>
-    playerActor ! point
+  import UserState.effects._
+
+  val fieldClick: EventFactory[Point] = point => eventWithAccess('mouseup) { access =>
+    access.publish(PlayerActor.Command.Point(point))
     noTransition
   }
 
-  val startMatchmakingClick: EventFactory[Unit] = access.event("click") { point =>
-    playerActor ! PlayerActor.Command.StartMatchMaking
+  val startMatchmakingClick: EventFactory[Unit] = point => eventWithAccess('click) { access =>
+    access.publish(PlayerActor.Command.StartMatchMaking)
     noTransition
   }
 }

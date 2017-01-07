@@ -1,6 +1,6 @@
 package wop.server.view
 
-import korolev.Korolev
+import korolev._
 import wop.server.UserState
 import wop.server.controller.MatchMakingController
 
@@ -11,7 +11,7 @@ class MatchMakingView(controller: MatchMakingController) {
 
   import wop.server.components.default._
 
-  val render: Korolev.Render[UserState] = {
+  val render: Render[UserState] = {
     case UserState.Matchmaking(nickname, playersOnline) =>
       'body(
         'div(
@@ -22,7 +22,7 @@ class MatchMakingView(controller: MatchMakingController) {
         'div(s"Players online: $playersOnline."),
         'button('style /= "margin-top: 10px",
           "Play with bot",
-          controller.playWithBotClick(())
+          controller.playWithBotClick
         )
       )
   }
