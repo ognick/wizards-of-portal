@@ -40,7 +40,7 @@ class PlayerActor(matchMaking: ActorRef, callback: PlayerActor.Notification => U
   }
 
   def inGameReceive(name: String, init: EnterGame): Receive = {
-    case point@(_: Int, _: Int) =>
+    case Command.Point(point) =>
       init.game ! point
     case TickGame(updatedState) =>
       callback(Notification.StateUpdated(updatedState))
@@ -67,12 +67,13 @@ object PlayerActor {
 
   object Command {
 
+    case class Point(point: (Int, Int)) extends Command
+
     case class SetName(name: String) extends Command
 
     case object StartMatchMaking extends Command
 
     case object PlayWithBot extends Command
-
   }
 
   sealed trait Notification

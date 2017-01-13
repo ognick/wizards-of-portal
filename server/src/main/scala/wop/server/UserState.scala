@@ -1,12 +1,17 @@
 package wop.server
 
+import korolev.Effects
 import wop.game.WopState
+import wop.server.actors.PlayerActor
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.Future
+import korolev.blazeServer.defaultExecutor
 
 sealed trait UserState
 
 object UserState {
+
+  val effects = Effects[Future, UserState, PlayerActor.Command]
 
   case class EnterNickName(loading: Boolean) extends UserState
 

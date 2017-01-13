@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 import scala.math._
 
 object WopSolver {
-  val MAX_DEPTH = 8
+  val MAX_DEPTH = 3
 
   implicit case object Time extends TimeProvider {
     def currentTime: Long = 0

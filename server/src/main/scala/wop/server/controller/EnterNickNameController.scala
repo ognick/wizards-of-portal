@@ -1,25 +1,24 @@
 package wop.server.controller
 
-import akka.actor.ActorRef
-import korolev.EventResult._
-import korolev.Korolev._
 import wop.server.UserState
 import wop.server.actors.PlayerActor
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
+import korolev.blazeServer.defaultExecutor
 
 /**
   * @author Aleksey Fomkin <aleksey.fomkin@gmail.com>
   */
-class EnterNickNameController(access: KorolevAccess[UserState], playerActor: ActorRef) {
+class EnterNickNameController() {
 
-  val inputId = access.id()
+  import UserState.effects._
 
-  val formSubmit: EventFactory[Unit] = access.event("submit") { _ =>
-    inputId.get[String]('value) foreach { value =>
-      playerActor ! PlayerActor.Command.SetName(value)
-      playerActor ! PlayerActor.Command.StartMatchMaking
+  val inputId = elementId
+
+  val formSubmit: Event = eventWithAccess('submit) { access =>
+    access.property[String](inputId, 'value) foreach { value =>
+      access.publish(PlayerActor.Command.SetName(value))
+      access.publish(PlayerActor.Command.StartMatchMaking)
     }
     immediateTransition {
       case enterNickNameState: UserState.EnterNickName =>
